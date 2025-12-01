@@ -386,7 +386,7 @@ $config = [
 
     // Trash functionality
     'enableTrash' => true,
-    'trashPath' => '/absolute/path/to/files/.trash/',
+    'trashPath' => $config['rootPath'] . '.trash/',
 
     // Security settings
     'security' => [
