@@ -19,6 +19,7 @@
 
 - [Overview](#overview)
 - [Features](#features)
+- [Screenshot](#screenshot)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
@@ -68,6 +69,9 @@
 - ⚡ **Performance Optimized**: Chunked uploads for large files, efficient file handling
 
 ---
+## Screenshot
+
+<img width="1866" height="492" alt="screenshot-myfilemanager-opensource" src="https://github.com/user-attachments/assets/c0733d15-5c15-4afb-a587-bee37d510ed3" />
 
 ## Features
 
