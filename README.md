@@ -291,7 +291,7 @@ The following table lists all available options when initializing the file manag
 | `sortOrder` | String | `asc` | Default sort order (`asc` or `desc`) |
 | `autoRefresh` | Boolean/Number | `false` | Auto-refresh interval in seconds (e.g., `30`) |
 | `banExtensions` | Array | See below | File extensions blocked for upload/rename |
-| `features` | Object | All enabled | Enable/disable specific features |
+| `features` | Object | All enabled | Enable/disable specific features (read below) |
 | `customMenus` | Array | `[]` | Custom menu items in menu bar |
 | `customContextMenu` | Array | `[]` | Custom context menu entries |
 | `onInit` | Function | `null` | Callback when file manager initializes |
@@ -307,7 +307,7 @@ The following table lists all available options when initializing the file manag
 
 #### Default Banned Extensions
 
-For security purposes, the following extensions are blocked by default:
+For security purposes, the following extensions are blocked by default (you can customize it for your needs but remember to customize it in both php and javascript):
 
 ```javascript
 banExtensions: [
