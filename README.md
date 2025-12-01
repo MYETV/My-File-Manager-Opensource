@@ -275,14 +275,14 @@ The following table lists all available options when initializing the file manag
 | `theme` | String | `light` | UI theme (`light` or `dark`) |
 | `maxFileSize` | Number | `524288000` | Maximum file size in bytes (500MB) |
 | `chunkSize` | Number | `1048576` | Chunk size for uploads in bytes (1MB) |
-| `trashPath` | String | `.trash` | Trash folder name (relative to root) |
+| `trashPath` | String | `.trash` | Trash folder name (relative to root) - it is reccomended to not change it |
 | `debug` | Boolean | `false` | Enable console debug messages |
 | `brandLogo` | String | `null` | URL to brand logo image |
 | `brandLink` | String | `null` | Link URL when clicking logo |
 | `brandTarget` | String | `_blank` | Link target (`_blank`, `_self`, etc.) |
 | `homeLabel` | String | `Home` | Label for home/root directory |
 | `cryptFiles` | Boolean | `false` | Enable client-side encryption |
-| `encryptionKey` | CryptoKey | `null` | Encryption key (derived from password) |
+| `encryptionKey` | CryptoKey | `null` | Encryption key (derived from password) - if not provided the key will be asked to the user (end-to-end encryption) |
 | `encryptionSalt` | Uint8Array | `null` | Salt for key derivation |
 | `cryptExclude` | Array | `[]` | MIME patterns to exclude from encryption (e.g., `['video/*', 'audio/*']`) |
 | `showUrlOnProperties` | Boolean | `false` | Show file URL in properties dialog |
@@ -290,7 +290,7 @@ The following table lists all available options when initializing the file manag
 | `sortBy` | String | `name` | Default sort field (`name`, `size`, `date`, `type`) |
 | `sortOrder` | String | `asc` | Default sort order (`asc` or `desc`) |
 | `autoRefresh` | Boolean/Number | `false` | Auto-refresh interval in seconds (e.g., `30`) |
-| `banExtensions` | Array | See below | File extensions blocked for upload/rename |
+| `banExtensions` | Array | See below | File extensions blocked for upload/rename (see below) |
 | `features` | Object | All enabled | Enable/disable specific features (read below) |
 | `customMenus` | Array | `[]` | Custom menu items in menu bar |
 | `customContextMenu` | Array | `[]` | Custom context menu entries |
