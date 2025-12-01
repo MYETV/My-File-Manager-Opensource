@@ -449,7 +449,7 @@ The simplest way to embed the file manager:
         brandLink: 'https://yoursite.com',
         cryptFiles: true, // Enable encryption
         showHidden: true,
-        autoRefresh: 30, // Refresh every 30 seconds
+        autoRefresh: 30000, // Refresh every 30 seconds
 
         // Custom menu items
         customMenus: [
