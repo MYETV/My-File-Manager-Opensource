@@ -1470,7 +1470,7 @@ Implement your own authentication logic with the `authCallback` function.
 Enable HMAC-SHA256 token authentication for enhanced security.
 
 #### Enable Token Auth
-
+This will send the token in header (bearer authentication)
 ```php
 'security' => [
     'enableTokenAuth' => true,
@@ -1480,7 +1480,8 @@ Enable HMAC-SHA256 token authentication for enhanced security.
 ]
 ```
 
-#### Generate Token
+#### Generate Token (PHP HMAC-SHA256)
+Enable the token auth in the connector.php and then generate the hmac-sha256 token with expiriation configurable in security.php (default 12 hours)
 
 ```php
 require_once 'src/security.php';
@@ -1497,7 +1498,7 @@ echo "Token: " . $token;
 ```javascript
 var fm = new MyFileManager('#filemanager', {
     url: 'src/connector.php',
-    token: 'generated-token-here'
+    token: '<?php echo $token ?>' //generated-token-here
 });
 ```
 
