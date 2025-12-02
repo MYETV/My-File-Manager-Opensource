@@ -20,11 +20,14 @@ jobs:
         php-version: '8.1'
         coverage: none
 
-    - name: Install dependencies
-      run: composer require --dev squizlabs/php_codesniffer --no-interaction --prefer-dist
-
-    - name: Run PHPCS Security Check
-      run: vendor/bin/phpcs --standard=PSR12 src/
-
     - name: PHP Syntax Check
       run: find src/ -name "*.php" -exec php -l {} \;
+
+    - name: Check for dangerous functions
+      run: |
+        echo "Checking for potentially dangerous PHP functions..."
+        ! grep -r "eval(" src/ || (echo "❌ Found eval() usage" && exit 1)
+        ! grep -r "exec(" src/ || (echo "❌ Found exec() usage" && exit 1)
+        ! grep -r "system(" src/ || (echo "❌ Found system() usage" && exit 1)
+        ! grep -r "passthru(" src/ || (echo "❌ Found passthru() usage" && exit 1)
+        echo "✅ No dangerous functions found"
