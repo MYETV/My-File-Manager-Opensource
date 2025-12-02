@@ -9,7 +9,7 @@
 
 [![CodeQL](https://github.com/OskarCosimo/My-File-Manager-Opensource/actions/workflows/codeql.yml/badge.svg)](https://github.com/OskarCosimo/My-File-Manager-Opensource/actions/workflows/codeql.yml)
 [![PHP Security Analysis](https://github.com/OskarCosimo/My-File-Manager-Opensource/actions/workflows/php-security.yml/badge.svg)](https://github.com/OskarCosimo/My-File-Manager-Opensource/actions/workflows/php-security.yml)
-[![Node.js](https://img.shields.io/badge/Node.js-18.x-green?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js Build](https://github.com/OskarCosimo/My-File-Manager-Opensource/actions/workflows/npm-publish.yml/badge.svg?logo=node.js&style=flat-square)](https://github.com/OskarCosimo/My-File-Manager-Opensource/actions/workflows/npm-publish.yml)
 
 **A modern, secure, and feature-rich file manager with end-to-end encryption support**
 
