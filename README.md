@@ -195,9 +195,9 @@ sudo systemctl reload nginx`
 IIS doesn't support file-level access control without additional modules, you could made a web.config file but you need url rewrite module to make it work.
 
 **Recommended solution:**
-Move `connector.php` outside the `/src/` folder:
+Move `connector.php` outside the `/src/` folder.
 
-Update paths in `connector.php`:
+Update paths in `connector.php`.
 
 Then in IIS Manager, deny access to the `/src/` folder.
 
