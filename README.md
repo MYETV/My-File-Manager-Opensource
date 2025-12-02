@@ -164,6 +164,8 @@ my-file-manager-opensource/
 │   └── myfilemanager.css                # Core styles
 ├── src/
 │   ├── connector.php                    # Main API endpoint
+│   ├── .htaccess                        # .htaccess for security with apache2 webserver (ready for production)
+│   ├── nginx.conf.example               # nginx.conf for an example configuration with nginx webserver
 │   ├── myfilemanager.php                # File manager core class
 │   ├── chunkuploader.php                # Chunked upload handler
 │   ├── security.php                     # Security utilities
@@ -177,6 +179,27 @@ my-file-manager-opensource/
 ├── package.json                         # NPM package info (optional)
 └── README.md                            # This file
 ```
+
+#### Apache (Linux/Windows/macOS)
+The included `.htaccess` file in `/src/` works out of the box.
+Only `connector.php` is accessible via HTTP.
+
+#### Nginx (Linux/macOS)
+Add the configuration from `src/nginx.conf.example` to your server block:
+`sudo nano /etc/nginx/sites-available/your-site`
+Add the location block from nginx.conf.example
+`sudo nginx -t
+sudo systemctl reload nginx`
+
+#### Windows IIS
+IIS doesn't support file-level access control without additional modules, you could made a web.config file but you need url rewrite module to make it work.
+
+**Recommended solution:**
+Move `connector.php` outside the `/src/` folder:
+
+Update paths in `connector.php`:
+
+Then in IIS Manager, deny access to the `/src/` folder.
 
 ### 3. Set Permissions
 
