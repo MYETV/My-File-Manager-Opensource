@@ -1,0 +1,30 @@
+name: PHP Security Analysis
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security:
+    name: PHP Security Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        coverage: none
+
+    - name: Install dependencies
+      run: composer require --dev squizlabs/php_codesniffer --no-interaction --prefer-dist
+
+    - name: Run PHPCS Security Check
+      run: vendor/bin/phpcs --standard=PSR12 src/
+
+    - name: PHP Syntax Check
+      run: find src/ -name "*.php" -exec php -l {} \;
