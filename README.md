@@ -6,7 +6,9 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4?logo=php)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E?logo=javascript)
+
 [![CodeQL](https://github.com/OskarCosimo/My-File-Manager-Opensource/actions/workflows/codeql.yml/badge.svg)](https://github.com/OskarCosimo/My-File-Manager-Opensource/actions/workflows/codeql.yml)
+[![PHP Security Analysis](https://github.com/OskarCosimo/My-File-Manager-Opensource/actions/workflows/php-security.yml/badge.svg)](https://github.com/OskarCosimo/My-File-Manager-Opensource/actions/workflows/php-security.yml)
 
 **A modern, secure, and feature-rich file manager with end-to-end encryption support**
 
