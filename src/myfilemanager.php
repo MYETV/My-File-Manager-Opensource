@@ -291,38 +291,35 @@ private function cmdDownload($params) {
  * @return array Deletion result
  */
 private function cmdDelete($params) {
+    
     if (!$this->hasPermission('delete')) {
+        error_log("Permission denied for cmdDelete");
         throw new Exception('Permission denied', 403);
     }
-    
+
     $targets = $params['targets'] ?? [];
     $removed = [];
-    
+
     foreach ($targets as $target) {
         $path = $this->resolvePath($target);
-        
-        // If deleting from trash folder, delete permanently
         $realTrashPath = realpath($this->config['trashPath']);
         $realPath = realpath($path);
-        
+
         if ($realTrashPath && $realPath && strpos($realPath, $realTrashPath) === 0) {
-            // Permanent delete
             if (is_dir($realPath)) {
                 $this->deleteDirectory($realPath);
             } else {
                 unlink($realPath);
             }
         } else {
-            // Move to trash instead of permanent delete
             $trashPath = $this->config['trashPath'] . DIRECTORY_SEPARATOR . basename($path);
             rename($path, $trashPath);
         }
-        
         $removed[] = $target;
     }
-    
     return ['removed' => $removed];
 }
+
     
     /**
      * Rename file/folder command
