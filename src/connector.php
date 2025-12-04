@@ -16,8 +16,18 @@ require_once __DIR__ . '/myfilemanager.php';
 require_once __DIR__ . '/security.php';
 require_once __DIR__ . '/chunkuploader.php';
 
-if (file_exists(__DIR__ . '/plugins/rate_limiter.php')) {
-    require_once __DIR__ . '/plugins/rate_limiter.php';
+$plugins = [];
+// Auto-load plugins
+$plugin_dir = __DIR__ . '/plugins/';
+if (is_dir($plugin_dir)) {
+    foreach (glob($plugin_dir . '*.php') as $plugin_file) {
+        require_once $plugin_file;
+        $plugin_name = basename($plugin_file, '.php');
+        $class_name = $plugin_name . 'Plugin';
+        if (class_exists($class_name)) {
+            $plugins[$plugin_name] = new $class_name($config);
+        }
+    }
 }
 
 // Start session for token management
@@ -185,7 +195,7 @@ try {
         
         // Plugins configuration
         'plugins' => [
-            'rate_limiter' => new RateLimiterPlugin($config)
+            'rate_limiter' => $plugins // dynamic
         ]
     ];
     
