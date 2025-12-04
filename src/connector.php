@@ -11,8 +11,6 @@
  * @license MIT
  */
 header('X-Requested-With: XMLHttpRequest');
-//only for MYETV
-require_once __DIR__ . '/myetv_functions.php';
 
 require_once __DIR__ . '/myfilemanager.php';
 require_once __DIR__ . '/security.php';
@@ -94,7 +92,7 @@ function parseFileSize($size) {
 }
 
 try {
-    $PATHTOFILES = $FOLDERPATH; //the path of the folder to use for upload or download files on your system (you can customize it as you want)
+    $PATHTOFILES = __DIR__ . '/../files/'; //the path of the folder to use for upload or download files on your system (you can customize it as you want)
     // Verify if exist
     if (!is_dir($PATHTOFILES)) {
         mkdir($PATHTOFILES, 0755, true);
@@ -106,17 +104,17 @@ try {
         'rootPath' => $PATHTOFILES,
         
         // URL path for accessing files, this url automatically adds the file name after it with a querystring ?filename=... it is usefull for custom download scripts
-        'rootUrl' => $URLPATH,
+        'rootUrl' => '', // https://... or leave blank to use the default
         
         // Maximum quota (supports units: B, KB, MB, GB, TB, PB)
         // Examples: 5368709120, "5GB", "5000MB"
         // Default (without unit) is bytes
-        'maxQuota' => parseFileSize($TOTALBYTESFORMYCLOUD),
+        'maxQuota' => parseFileSize('5GB'),
     
         // Maximum file size for upload (supports units: B, KB, MB, GB, TB, PB)
         // Examples: 524288000, "500MB", "0.5GB"
         // Default (without unit) is bytes
-        'maxFileSize' => parseFileSize($MAXFILESIZEALLOWED),
+        'maxFileSize' => parseFileSize('0.5GB'),
         
         // Allowed mime types
         'allowedMimeTypes' => ['image/*', 'video/*', 'audio/*', 'text/*', 'application/pdf', 'text/plain'],
@@ -163,24 +161,24 @@ try {
         
         // Enable trash functionality
         'enableTrash' => true,
-        'trashPath' => $PATHTOFILES .'.trash/', //DO NOT CHANGE THE FOLDER PATH FOR THE TRASH
+        'trashPath' => $PATHTOFILES.'.trash/', //DO NOT CHANGE THE .trash NAME OR YOU HAVE TO PASS IT AS OPTION INTO THE INITIALIZZATION OF THE JAVASCRIPT FILE
         
-        // Security settings
+        // Security settings (the default tokenSecret is just an example)
         'security' => [
-            'enableTokenAuth' => true,
-            'tokenSecret' => base64_encode(hash('sha512', $usercodeVARsec).hash('sha256', $usercodeVARsec)),
+            'enableTokenAuth' => false,
+            'tokenSecret' => base64_encode(hash('sha512', 'user123').hash('sha256', 'user123')),
             'enableIPWhitelist' => false,
             'allowedIPs' => [],
         ],
         
         // Custom authentication callback
-        'authCallback' => function() use ($codeVARsec, $memberusernameVAR, $TOTALBYTESFORMYCLOUD) {
+        'authCallback' => function() {
     // Implement your authentication logic here
     // Return user info array or false
     return [
-        'id' => $codeVARsec,
-        'username' => $memberusernameVAR,
-        'quota' => $TOTALBYTESFORMYCLOUD, // in bytes
+        'id' => 'user123',
+        'username' => 'the_user_name',
+        'quota' => '524288000', // in bytes
         'permissions' => ['read', 'write', 'delete', 'upload', 'download', 'rename', 'copy', 'move', 'mkdir', 'search', 'quota', 'info']
     ];
 },
@@ -224,10 +222,10 @@ if (!is_dir($config['trashPath'])) {
     $cmd = $_POST['cmd'] ?? $_GET['cmd'] ?? 'open';
     while (ob_get_level()) ob_end_clean();
 /**
- * NEW: Video Processing Endpoint with Rate Limiting
- * Rate limit: 4 videos every 30 minutes per IP
+ * Video Processing Endpoint with Rate Limiting (for video editing plugin)
+ * Rate limit: 4 videos every 30 minutes per IP (customizable)
  * Supports trim, crop, resize, format conversion
- * **BASE64 DECODED hash → real filename resolution**
+ * **BASE64 DECODED hash
  */
 if ($cmd === 'video_process') {
     $rateCheck = $config['plugins']['rate_limiter']->checkVideoProcessLimit($_SERVER['REMOTE_ADDR']);
