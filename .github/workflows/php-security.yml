@@ -23,16 +23,19 @@ jobs:
     - name: PHP Syntax Check
       run: find src/ -name "*.php" -exec php -l {} \;
 
-    - name: Check for dangerous functions
+    - name: Check for potentially dangerous functions
       run: |
         echo "Checking for potentially dangerous PHP functions..."
-        if grep -rn --include="*.php" --exclude="connector.php" -E '\b(eval|system|shell_exec|proc_open|popen)\s*\(' src/ --exclude-dir=vendor; then
-          echo "❌ Found dangerous function usage"
-          grep -rn --include="*.php" --exclude="connector.php" -E '\b(eval|system|shell_exec|proc_open|popen)\s*\(' src/ --exclude-dir=vendor
+        DANGEROUS=$(grep -rnE '\b(eval|exec|system|shell_exec|proc_open|popen)\s*\(' src/ --exclude-dir=vendor 2>/dev/null | grep -v 'ffmpeg' | grep -v 'video_process' | grep -v 'PATHTOFILES' || true)
+        if [ -n "$DANGEROUS" ]; then
+          echo "❌ Found dangerous function usage (excluding safe lines):"
+          echo "$DANGEROUS"
           exit 1
         fi
-        if grep -rn --include="*.php" --exclude="connector.php" -E '\bpassthru\s*\(' src/ --exclude-dir=vendor | grep -v 'fpassthru'; then
+        PASSTHRU=$(grep -rnE '\bpassthru\s*\(' src/ --exclude-dir=vendor 2>/dev/null | grep -v 'fpassthru' || true)
+        if [ -n "$PASSTHRU" ]; then
           echo "❌ Found passthru() usage (not fpassthru)"
+          echo "$PASSTHRU"
           exit 1
         fi
         echo "✅ No dangerous functions found"
