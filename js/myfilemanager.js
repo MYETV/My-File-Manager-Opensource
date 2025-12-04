@@ -2624,10 +2624,20 @@ window.MyFileManagerCrypto = {
         if (confirm(message)) {
             var targets = this.state.selectedFiles.map(function (f) { return f.hash; });
 
-            this.request({
+            var requestData = {
                 cmd: 'delete',
                 targets: targets
-            }, function (response) {
+            };
+
+            // Aggiungi token se presente
+            if (this.options.token) {
+                requestData.token = this.options.token;
+            }
+
+            console.log("DELETE REQUEST:", requestData); // DEBUG
+
+            this.request(requestData, function (response) {
+                console.log("DELETE RESPONSE:", response); // DEBUG
                 self.refresh();
                 self.updateTrashIcon();
             });
