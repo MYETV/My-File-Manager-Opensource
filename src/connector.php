@@ -216,7 +216,7 @@ if (is_dir($plugin_dir)) {
                 error_log("Failed to load plugin {$plugin_name}: " . $e->getMessage());
             }
         } else {
-            error_log("Skipped plugin {$plugin_name}: disabled or not configured");
+            //error_log("Skipped plugin {$plugin_name}: disabled or not configured");
         }
     }
 }
@@ -286,7 +286,7 @@ if ($cmd === 'video_process') {
     $params_json = $_POST['params'] ?? '{}';
     $params = json_decode($params_json, true);
     
-    error_log("DEBUG: Video process params: " . json_encode($params));
+    //error_log("DEBUG: Video process params: " . json_encode($params));
     
     $result = $config['plugins']['video_editor']->processVideo($file_hash, $params, $config['rootPath']);
     
