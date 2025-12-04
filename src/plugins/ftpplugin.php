@@ -14,6 +14,7 @@ require_once __DIR__ . '/plugininterface.php';
 class ftppluginPlugin implements PluginInterface {
     private $config;
     private $connection;
+    private $enabled;
     
     /**
      * Constructor
@@ -22,19 +23,44 @@ class ftppluginPlugin implements PluginInterface {
      */
     public function __construct($config) {
         $this->config = $config;
+        $this->enabled = $config['enabled'] ?? true;
+        
+        // ✅ Skip connection if disabled
+        if (!$this->enabled) {
+            error_log("⏸️ FTP plugin disabled - skipping connection");
+            return;
+        }
+        
         $this->connect();
     }
     
     /**
-     * Connect to FTP server
+     * Check if plugin is enabled
+     */
+    public function isEnabled() {
+        return $this->enabled;
+    }
+    
+    /**
+     * Connect to FTP server (only if enabled)
      * 
      * @throws Exception
      */
     private function connect() {
+        if (!$this->enabled) return;
+        
+        if (empty($this->config['host'])) {
+            throw new Exception('FTP host not configured', 500);
+        }
+        
         $this->connection = ftp_connect($this->config['host'], $this->config['port'] ?? 21);
         
         if (!$this->connection) {
             throw new Exception('Could not connect to FTP server', 500);
+        }
+        
+        if (empty($this->config['username']) || empty($this->config['password'])) {
+            throw new Exception('FTP credentials not configured', 401);
         }
         
         $login = ftp_login($this->connection, $this->config['username'], $this->config['password']);
@@ -47,15 +73,17 @@ class ftppluginPlugin implements PluginInterface {
         if ($this->config['passive'] ?? true) {
             ftp_pasv($this->connection, true);
         }
+        
+        error_log("✅ FTP connected to {$this->config['host']}");
     }
     
     /**
      * List files and directories
-     * 
-     * @param string $path Path to list
-     * @return array Files array
      */
     public function listFiles($path) {
+        if (!$this->enabled || !$this->connection) {
+            return [];
+        }
         $list = ftp_nlist($this->connection, $path);
         $files = [];
         
@@ -68,14 +96,15 @@ class ftppluginPlugin implements PluginInterface {
     
     /**
      * Read file content
-     * 
-     * @param string $path File path
-     * @return string File content
      */
     public function readFile($path) {
+        if (!$this->enabled || !$this->connection) {
+            throw new Exception('FTP plugin not available', 503);
+        }
         $tempFile = tempnam(sys_get_temp_dir(), 'ftp_');
         
         if (!ftp_get($this->connection, $tempFile, $path, FTP_BINARY)) {
+            unlink($tempFile);
             throw new Exception('Could not download file from FTP', 500);
         }
         
@@ -87,12 +116,11 @@ class ftppluginPlugin implements PluginInterface {
     
     /**
      * Write file content
-     * 
-     * @param string $path File path
-     * @param string $content File content
-     * @return bool Success
      */
     public function writeFile($path, $content) {
+        if (!$this->enabled || !$this->connection) {
+            return false;
+        }
         $tempFile = tempnam(sys_get_temp_dir(), 'ftp_');
         file_put_contents($tempFile, $content);
         
@@ -104,62 +132,58 @@ class ftppluginPlugin implements PluginInterface {
     
     /**
      * Delete file or directory
-     * 
-     * @param string $path Path to delete
-     * @return bool Success
      */
     public function delete($path) {
-        // Check if directory or file
+        if (!$this->enabled || !$this->connection) {
+            return false;
+        }
         $size = ftp_size($this->connection, $path);
         
         if ($size === -1) {
-            // Directory
             return ftp_rmdir($this->connection, $path);
         } else {
-            // File
             return ftp_delete($this->connection, $path);
         }
     }
     
     /**
      * Create directory
-     * 
-     * @param string $path Directory path
-     * @return bool Success
      */
     public function createDirectory($path) {
+        if (!$this->enabled || !$this->connection) {
+            return false;
+        }
         return ftp_mkdir($this->connection, $path) !== false;
     }
     
     /**
      * Rename/move file or directory
-     * 
-     * @param string $oldPath Old path
-     * @param string $newPath New path
-     * @return bool Success
      */
     public function rename($oldPath, $newPath) {
+        if (!$this->enabled || !$this->connection) {
+            return false;
+        }
         return ftp_rename($this->connection, $oldPath, $newPath);
     }
     
     /**
      * Check if path exists
-     * 
-     * @param string $path Path to check
-     * @return bool Exists
      */
     public function exists($path) {
+        if (!$this->enabled || !$this->connection) {
+            return false;
+        }
         $list = ftp_nlist($this->connection, dirname($path));
         return in_array($path, $list);
     }
     
     /**
      * Get file info
-     * 
-     * @param string $path File path
-     * @return array File information
      */
     public function getFileInfo($path) {
+        if (!$this->enabled || !$this->connection) {
+            return null;
+        }
         $size = ftp_size($this->connection, $path);
         $mdtm = ftp_mdtm($this->connection, $path);
         
