@@ -9,7 +9,7 @@
  * @license MIT
  */
 
-require_once 'PluginInterface.php';
+require_once __DIR__ . '/plugininterface.php';
 
 class FTPPlugin implements PluginInterface {
     private $config;
