@@ -88,7 +88,13 @@ function parseFileSize($size) {
 }
 
 try {
-    $PATHTOFILES = '/path/to/files';
+    $PATHTOFILES = __DIR__ . '/../files/'; //the path of the folder to use for upload or download files on your system (you can customize it as you want)
+    // Verify if exist
+    if (!is_dir($PATHTOFILES)) {
+        mkdir($PATHTOFILES, 0755, true);
+        error_log("Created files folder: {$PATHTOFILES}");
+    }
+    
     // Configuration array
     $config = [
         // Root path for file operations
@@ -495,3 +501,4 @@ $response = $fm->execute($cmd, $_REQUEST);
         'code' => $e->getCode()
     ]);
 }
+
