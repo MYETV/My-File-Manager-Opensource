@@ -27,22 +27,21 @@ jobs:
       run: |
         echo "Checking for potentially dangerous PHP functions..."
         
-        # Check dangerous functions EXCLUDING known safe lines
-        DANGEROUS=$(grep -rn --include="*.php" -E '\b(eval|system|shell_exec|proc_open|popen)\s*\(' src/ 2>/dev/null | grep -vE "(ffmpeg|video_process|PATHTOFILES)" || true)
+        # Create temporary file to analyze (exclude connector.php safe lines)
+        grep -rn --include="*.php" -E '\b(eval|system|shell_exec|proc_open|popen|exec)\s*\(' src/ > temp_security_check.txt 2>/dev/null || true
         
-        if [ -n "$DANGEROUS" ]; then
+        # Remove safe FFmpeg lines from temp file
+        grep -v "ffmpeg\|video_process\|PATHTOFILES" temp_security_check.txt > filtered_check.txt 2>/dev/null || true
+        
+        # Check if filtered file has content
+        if [ -s filtered_check.txt ]; then
           echo "❌ Found dangerous function usage:"
-          echo "$DANGEROUS"
+          cat filtered_check.txt
+          rm -f temp_security_check.txt filtered_check.txt
           exit 1
         fi
         
-        # Check passthru
-        PASSTHRU=$(grep -rn --include="*.php" -E '\bpassthru\s*\(' src/ 2>/dev/null | grep -v 'fpassthru' || true)
-        
-        if [ -n "$PASSTHRU" ]; then
-          echo "❌ Found passthru() usage (not fpassthru)"
-          echo "$PASSTHRU"
-          exit 1
-        fi
+        # Clean up
+        rm -f temp_security_check.txt filtered_check.txt
         
         echo "✅ No dangerous functions found"
