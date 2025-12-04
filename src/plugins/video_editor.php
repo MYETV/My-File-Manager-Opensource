@@ -76,9 +76,9 @@ class video_editorPlugin {
         // Build FFmpeg command
         $command_line = $this->buildFFmpegCommand($input_file, $output_file, $params);
         
-        error_log("=== VIDEO PROCESSOR PLUGIN ===");
-        error_log("Command: " . $command_line);
-        error_log("==============================");
+        //error_log("=== VIDEO PROCESSOR PLUGIN DEBUG ===");
+        //error_log("Command: " . $command_line);
+        //error_log("==============================");
         
         $output_lines = [];
         $return_code = 0;
@@ -147,16 +147,16 @@ class video_editorPlugin {
     $resize_w = (int)$params['resize_w'] + ((int)$params['resize_w'] % 2);
     $resize_h = (int)$params['resize_h'] + ((int)$params['resize_h'] % 2);
     
-    // ✅ DEBUG LOG
-    error_log("=== BLUR DEBUG ===");
-    error_log("Original blur time: {$blur['start_time']} - {$blur['end_time']}");
-    error_log("Trim start: $trim_start, Duration: $duration");
-    error_log("Adjusted blur time: $start_time - $end_time");
-    error_log("Blur position: x=$x, y=$y");
-    error_log("Video size after crop/resize: {$resize_w}x{$resize_h}");
-    error_log("PNG path: {$this->blur_png_path}");
-    error_log("PNG exists: " . (file_exists($this->blur_png_path) ? 'YES' : 'NO'));
-    error_log("==================");
+    // DEBUG LOG
+    //error_log("=== BLUR DEBUG ===");
+    //error_log("Original blur time: {$blur['start_time']} - {$blur['end_time']}");
+    //error_log("Trim start: $trim_start, Duration: $duration");
+    //error_log("Adjusted blur time: $start_time - $end_time");
+    //error_log("Blur position: x=$x, y=$y");
+    //error_log("Video size after crop/resize: {$resize_w}x{$resize_h}");
+    //error_log("PNG path: {$this->blur_png_path}");
+    //error_log("PNG exists: " . (file_exists($this->blur_png_path) ? 'YES' : 'NO'));
+    //error_log("==================");
     
     return sprintf(
         '%s -y -ss %0.6f -t %0.6f -i %s -i %s ' .
