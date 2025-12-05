@@ -232,13 +232,35 @@ Edit `src/connector.php` to configure your file manager:
 require_once 'myfilemanager.php';
 require_once 'chunkuploader.php';
 require_once 'security.php';
-
+...
 // Your configuration
-$FOLDERPATH = __DIR__ . '/../files/';  // Absolute path to file storage
-$URLPATH = 'https://contentdelivery.example.com/file.php';  // URL path for file access (?filename will be automatically added to the querystring), leave it blank to use the default value
-$TOTALBYTESFORMYCLOUD = '5GB';          // User quota
-$MAXFILESIZEALLOWED = '500MB';          // Max file size
-
+$PATHTOFILES = __DIR__ . '/../files/';  // Absolute path to file storage
+// Verify if exist
+    if (!is_dir($PATHTOFILES)) {
+        mkdir($PATHTOFILES, 0755, true);
+        error_log("Created files folder: {$PATHTOFILES}");
+    }
+    // Configuration array
+    $config = [
+        // Root path for file operations
+        'rootPath' => $PATHTOFILES,
+        
+        // URL path for accessing files, this url automatically adds the file name after it with a querystring ?filename=... it is usefull for custom download scripts
+        'rootUrl' => '', // https://... or leave blank to use the default
+        
+        // Maximum quota (supports units: B, KB, MB, GB, TB, PB)
+        // Examples: 5368709120, "5GB", "5000MB"
+        // Default (without unit) is bytes
+        'maxQuota' => parseFileSize('5GB'),
+    
+        // Maximum file size for upload (supports units: B, KB, MB, GB, TB, PB)
+        // Examples: 524288000, "500MB", "0.5GB"
+        // Default (without unit) is bytes
+        'maxFileSize' => parseFileSize('0.5GB'),
+        
+        // Allowed mime types
+        'allowedMimeTypes' => ['image/*', 'video/*', 'audio/*', 'text/*', 'application/pdf', 'text/plain'],
+...
 // See Configuration Options section for full config
 ```
 
@@ -306,7 +328,7 @@ The following table lists all available options when initializing the file manag
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `url` | String | `/connector.php` | Backend API endpoint URL |
-| `downloadUrl` | String | `null` | Custom download URL (if different from connector) |
+| `downloadUrl` | String | `null` | Custom download URL (leave it blank to use direct file download script) |
 | `token` | String | `null` | Authentication token for API requests |
 | `lang` | String | Browser language | UI language (`en`, `it`, `es`, `de`, `fr`, `pt`, `zh`, `ja`, `ru`) |
 | `viewMode` | String | `list` | Default view mode (`list` or `grid`) |
