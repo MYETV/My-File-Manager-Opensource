@@ -233,6 +233,7 @@ window.MyFileManagerCrypto = {
             sortBy: 'name',
             sortOrder: 'asc',
             autoRefresh: false,
+            hideExtensions: [], // Extensions to hide from view (e.g., ['.tmp', '.log', '.cache'])
             //these are defualt banned extensions for uploads or rename, if you edit the option at the initization of the file manager, make sure to include the default ones plus your custom ones for security purposes. If you change it, check also connector.php
             banExtensions: [
                 // Unix/Linux executables
@@ -1624,6 +1625,21 @@ window.MyFileManagerCrypto = {
     */
     MyFileManager.prototype.renderFiles = function () {
         var self = this;
+        var container = this.container.querySelector('.mfm-content');
+
+        // Filter hidden extensions
+        files = files.filter(function (file) {
+            if (file.mime === 'directory') return true; // Always show directories
+
+            var fileName = file.name.toLowerCase();
+            for (var i = 0; i < self.options.hideExtensions.length; i++) {
+                var ext = self.options.hideExtensions[i].toLowerCase();
+                if (fileName.endsWith(ext)) {
+                    return false; // Hide this file
+                }
+            }
+            return true;
+        });
         var files = this.sortFiles(this.state.files);
         var html = '';
 
