@@ -1109,3 +1109,186 @@
         display: none;
     }
 }
+
+/* Download Progress Modal */
+.mfm-download-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.mfm-download-modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 500px;
+    max-width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.mfm-download-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.mfm-download-modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.mfm-download-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+    padding: 0;
+}
+
+    .mfm-download-modal-close:hover {
+        color: #333;
+    }
+
+.mfm-download-modal-body {
+    padding: 20px;
+}
+
+.mfm-download-info {
+    margin-bottom: 15px;
+}
+
+.mfm-download-filename {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 5px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.4;
+}
+
+.mfm-download-filesize {
+    font-size: 13px;
+    color: #666;
+}
+
+.mfm-download-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #666;
+    margin-top: 10px;
+}
+
+.mfm-download-speed,
+.mfm-download-time {
+    font-weight: 500;
+}
+
+.mfm-download-close-btn {
+    padding: 8px 20px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+    .mfm-download-close-btn:hover {
+        background: #1976D2;
+    }
+
+.mfm-download-status {
+    padding: 12px;
+    border-radius: 4px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+.mfm-download-status-message {
+    font-size: 13px;
+    color: #721c24;
+}
+
+/* Dark theme - Download Modal */
+.mfm-theme-dark .mfm-download-modal-content {
+    background: #2d2d2d;
+    color: #e0e0e0;
+}
+
+.mfm-theme-dark .mfm-download-modal-header {
+    border-bottom-color: #444;
+}
+
+.mfm-theme-dark .mfm-download-modal-title {
+    color: #e0e0e0;
+}
+
+.mfm-theme-dark .mfm-download-modal-close {
+    color: #999;
+}
+
+    .mfm-theme-dark .mfm-download-modal-close:hover {
+        color: #e0e0e0;
+    }
+
+.mfm-theme-dark .mfm-download-filename {
+    color: #e0e0e0;
+}
+
+.mfm-theme-dark .mfm-download-filesize,
+.mfm-theme-dark .mfm-download-speed,
+.mfm-theme-dark .mfm-download-time {
+    color: #999;
+}
+
+.mfm-theme-dark .mfm-download-status {
+    background: #3d2426;
+    border-color: #5c3638;
+}
+
+.mfm-theme-dark .mfm-download-status-message {
+    color: #f8d7da;
+}
+
+.mfm-theme-dark .mfm-progress-container {
+    background-color: #1e1e1e;
+}
+
+.mfm-theme-dark .mfm-progress-text {
+    color: #e0e0e0;
+}
+
+/* Responsive - Download Modal */
+@media (max-width: 600px) {
+    .mfm-download-modal-content {
+        width: 95%;
+    }
+
+    .mfm-download-modal-header {
+        padding: 15px;
+    }
+
+    .mfm-download-modal-body {
+        padding: 15px;
+    }
+
+    .mfm-download-stats {
+        flex-direction: column;
+        gap: 5px;
+    }
+}
