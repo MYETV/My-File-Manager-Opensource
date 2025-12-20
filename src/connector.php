@@ -111,6 +111,10 @@ try {
         // Examples: 524288000, "500MB", "0.5GB"
         // Default (without unit) is bytes
         'maxFileSize' => parseFileSize('0.5GB'),
+
+        'readOnlyFolders' => ['.trash', 'system', 'config'], // Folders where upload/mkdir is blocked
+
+        'protectedFolders' => ['.trash', 'uploads', 'backup'], // Folders that cannot be renamed/deleted
         
         // Allowed mime types
         'allowedMimeTypes' => ['image/*', 'video/*', 'audio/*', 'text/*', 'application/pdf', 'text/plain'],
@@ -148,6 +152,35 @@ try {
                 'docm', 'xlsm', 'pptm', 'dotm', 'xltm'
         ],
 
+        'extensionRestrictions' => [
+        'log' => [
+            'read' => true,      // Can view/download
+            'write' => false,    // Cannot rename/modify
+            'open' => false,     // Cannot open in editor
+            'delete' => false    // Cannot delete
+        ],
+        'txt' => [
+            'read' => true,
+            'write' => true,
+            'open' => true,
+            'delete' => true
+        ],
+        'pdf' => [
+            'read' => true,
+            'write' => false,
+            'open' => true,
+            'delete' => true
+        ],
+        // Add more extensions as needed
+    ],
+    
+    // Default permissions for extensions not listed above
+    'defaultExtensionPermissions' => [
+        'read' => true,
+        'write' => true,
+        'open' => true,
+        'delete' => true
+    ],
         
         // Disabled operations (upload, download, delete, rename, mkdir, etc.)
         'disabledOperations' => [],
@@ -347,6 +380,14 @@ if (!empty($targetPath)) {
 $result = $uploader->handleUpload($uploadFile, $targetPath, $_POST);
     echo json_encode($result);
     exit;
+}
+
+// Clean output for download command
+if ($cmd === 'download') {
+    @ini_set('memory_limit', '-1');
+    @ini_set('max_execution_time', '0');
+    
+    while (@ob_end_clean()); // Clear all buffers
 }
 
     // Check if operation is disabled
