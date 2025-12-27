@@ -334,17 +334,22 @@ if ($cmd === 'upload') {
         throw new Exception('Operation not allowed', 403);
     }
 
-    // Security check for banned extensions
-    $uploadFile = $_FILES['upload'] ?? null;
-    if (!empty($uploadFile['name'])) {
-        $ext = strtolower(pathinfo($uploadFile['name'], PATHINFO_EXTENSION));
+// Security check for banned extensions
+$uploadFile = $_FILES['upload'] ?? null;
+if (!empty($uploadFile['name'])) {
+    // Gestisci sia singolo file che array multipli
+    $fileNames = is_array($uploadFile['name']) ? $uploadFile['name'] : [$uploadFile['name']];
+    
+    foreach ($fileNames as $fileName) {
+        $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
         if (in_array($ext, $config['banExtensions'])) {
-            error_log("BANNED: " . $uploadFile['name']);
+            error_log("BANNED: " . $fileName);
             http_response_code(403);
             echo json_encode(['error' => 'Dangerous extension: ' . $ext]);
             exit;
         }
     }
+}
 
     // Fix for empty files
     if (($uploadFile['size'] ?? 0) === 0) {
