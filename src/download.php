@@ -10,6 +10,27 @@ define('PUBLIC_LINKS_DIR', '/files/public_links');
 // DATE/TIME TIMEZONE
 define('DISPLAY_TIMEZONE', 'UTC');
 
+// ============================================================================
+// PREVENT BROWSER CACHING
+// ============================================================================
+header_remove('ETag');
+header_remove('Pragma');
+header_remove('Cache-Control');
+header_remove('Last-Modified');
+header_remove('Expires');
+
+header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
+
+// Cloudflare-specific headers to force bypass
+header('CF-Cache-Status: BYPASS');
+header('CDN-Cache-Control: no-cache');
+
+// Vary header to prevent caching different tokens
+header('Vary: *');
+
 // Start session
 session_start();
 
@@ -83,7 +104,6 @@ function incrementDownload($token, $linkData) {
  * Check if user is authenticated (for registered-only links)
  */
 function isUserAuthenticated() {
-    // This is a placeholder. Replace with your authentication check, if needed.
     return isset($_SESSION['user_id']) || 
            isset($_SESSION['logged_in']) || 
            isset($_COOKIE['auth_token']);
@@ -209,24 +229,35 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
 
 ?>
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Download: <?= htmlspecialchars($link['file_name']) ?></title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* Fixed: removed flex from body to allow AdSense privacy banner to position correctly */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             background: linear-gradient(135deg, #daa520 0%, #b8860b 100%);
             min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* Wrapper to center content without interfering with AdSense */
+        .dl-page-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            min-height: calc(100vh - 40px);
         }
-        .container {
+        
+        .dl-wrapper {
             background: white;
             max-width: 600px;
             width: 100%;
@@ -234,17 +265,31 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        h1 { color: #333; margin-bottom: 10px; font-size: 28px; }
-        .file-info {
+        
+        .dl-title { 
+            color: #333; 
+            margin-bottom: 10px; 
+            font-size: 28px; 
+        }
+        
+        .dl-file-info {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 10px;
             margin: 25px 0;
             border-left: 4px solid #daa520;
         }
-        .file-info div { margin: 8px 0; color: #555; }
-        .file-info strong { color: #333; }
-        .timer {
+        
+        .dl-file-info div { 
+            margin: 8px 0; 
+            color: #555; 
+        }
+        
+        .dl-file-info strong { 
+            color: #333; 
+        }
+        
+        .dl-countdown {
             font-size: 72px;
             color: #daa520;
             text-align: center;
@@ -252,8 +297,15 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
-        .message { text-align: center; color: #666; margin: 20px 0; font-size: 16px; }
-        .download-btn {
+        
+        .dl-status-text { 
+            text-align: center; 
+            color: #666; 
+            margin: 20px 0; 
+            font-size: 16px; 
+        }
+        
+        .dl-button {
             display: block;
             width: 100%;
             padding: 18px;
@@ -267,25 +319,17 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
             margin-top: 20px;
             transition: transform 0.2s;
             box-shadow: 0 4px 15px rgba(218, 165, 32, 0.4);
+            border: none;
+            cursor: pointer;
         }
-        .download-btn:hover {
+        
+        .dl-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(218, 165, 32, 0.6);
             background: linear-gradient(135deg, #b8860b 0%, #daa520 100%);
         }
-        .ad-container {
-            margin: 30px 0;
-            padding: 20px;
-            background: #fff;
-            border: 2px dashed #daa520;
-            border-radius: 10px;
-            text-align: center;
-            min-height: 250px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .progress-bar {
+        
+        .dl-progress-wrapper {
             width: 100%;
             height: 8px;
             background: #e0e0e0;
@@ -293,74 +337,80 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
             overflow: hidden;
             margin: 20px 0;
         }
-        .progress-fill {
+        
+        .dl-progress-bar {
             height: 100%;
             background: linear-gradient(90deg, #daa520 0%, #b8860b 100%);
             width: 0%;
             transition: width 1s linear;
         }
-        .footer { 
+        
+        .dl-footer { 
             text-align: center; 
             margin-top: 20px; 
             color: #666; 
             font-size: 12px; 
         }
-        .footer .timezone {
+        
+        .dl-footer .timezone-info {
             color: #999;
             font-style: italic;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📥 Download File</h1>
-        
-        <div class="file-info">
-            <div><strong>📄 File:</strong> <?= htmlspecialchars($link['file_name']) ?></div>
-            <div><strong>💾 Size:</strong> <?= $fileSizeMB ?> MB</div>
-            <div><strong>📊 Downloads:</strong> <?= $link['download_count'] ?><?= $link['max_downloads'] > 0 ? ' / ' . $link['max_downloads'] : '' ?></div>
-            <div><strong>⏰ Expires in:</strong> <?= $expiresMinutes ?> minutes</div>
-        </div>
-        
-        <p class="message">⏳ Please wait while we prepare your download...</p>
-        
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress"></div>
-        </div>
-        
-        <div class="timer" id="timer"><?= $link['wait_seconds'] ?></div>
-        
-        <a href="?t=<?= htmlspecialchars($token) ?>&action=download" 
-           class="download-btn" 
-           id="download-btn" 
-           style="display: none;">
-            ⬇️ Download Now
-        </a>
-        
-        <div class="footer">
-            Secure download • Expires <strong><?= $expiresFormatted ?></strong> <span class="timezone">(<?= $timezone ?>)</span>
+    <div class="dl-page-wrapper">
+        <div class="dl-wrapper">
+            <h1 class="dl-title">📥 Download File</h1>
+            
+            <div class="dl-file-info">
+                <div><strong>📄 File:</strong> <?= htmlspecialchars($link['file_name']) ?></div>
+                <div><strong>💾 Size:</strong> <?= $fileSizeMB ?> MB</div>
+                <div><strong>📊 Downloads:</strong> <?= $link['download_count'] ?><?= $link['max_downloads'] > 0 ? ' / ' . $link['max_downloads'] : '' ?></div>
+                <div><strong>⏰ Expires in:</strong> <?= $expiresMinutes ?> minutes</div>
+            </div>
+            
+            <p class="dl-status-text">⏳ Please wait while we prepare your download...</p>
+            
+            <div class="dl-progress-wrapper">
+                <div class="dl-progress-bar" id="dlProgressBar"></div>
+            </div>
+            
+            <div class="dl-countdown" id="dlTimer"><?= $link['wait_seconds'] ?></div>
+            
+            <a href="?t=<?= htmlspecialchars($token) ?>&action=download" 
+               class="dl-button" 
+               id="dlButton" 
+               style="display: none;">
+                ⬇️ Download Now
+            </a>
+            
+            <div class="dl-footer">
+                Secure download • Expires <strong><?= $expiresFormatted ?></strong> <span class="timezone-info">(<?= $timezone ?>)</span>
+            </div>
         </div>
     </div>
     
     <script>
         let timeLeft = <?= $link['wait_seconds'] ?>;
         const totalTime = timeLeft;
-        const timerEl = document.getElementById('timer');
-        const downloadBtn = document.getElementById('download-btn');
-        const progressFill = document.getElementById('progress');
+        const timerEl = document.getElementById('dlTimer');
+        const downloadBtn = document.getElementById('dlButton');
+        const progressBar = document.getElementById('dlProgressBar');
+        const statusText = document.querySelector('.dl-status-text');
         
         const countdown = setInterval(() => {
             timeLeft--;
             timerEl.textContent = timeLeft;
-            progressFill.style.width = ((totalTime - timeLeft) / totalTime * 100) + '%';
+            progressBar.style.width = ((totalTime - timeLeft) / totalTime * 100) + '%';
             
             if (timeLeft <= 0) {
                 clearInterval(countdown);
                 timerEl.textContent = '✅';
                 timerEl.style.color = '#28a745';
-                progressFill.style.width = '100%';
+                progressBar.style.width = '100%';
                 downloadBtn.style.display = 'block';
-                document.querySelector('.message').textContent = '✅ Ready to download!';
+                statusText.textContent = '✅ Ready to download!';
             }
         }, 1000);
     </script>
