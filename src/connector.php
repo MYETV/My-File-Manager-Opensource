@@ -214,7 +214,10 @@ try {
         //     'password' => 'pass',
         //     'port' => 21,
         //     'passive' => true
-        ]
+        ],
+    'publiclinks' => [
+        'enabled' => false, // ENABLED/DISABLED download public links plugin
+    ]
         ],
         // Custom authentication callback
         'authCallback' => function() {
@@ -288,6 +291,19 @@ if (!is_dir($config['trashPath'])) {
     // Get command from request
     $cmd = $_POST['cmd'] ?? $_GET['cmd'] ?? 'open';
     while (ob_get_level()) ob_end_clean();
+
+        // Handle public links plugin commands
+if (strpos($cmd, 'publiclink_') === 0) {
+    if (!isset($config['plugins']['publiclinks'])) {
+        http_response_code(503);
+        echo json_encode(['success' => false, 'error' => 'Public links plugin not available']);
+        exit;
+    }
+    
+    $result = $config['plugins']['publiclinks']->handleCommand($cmd, $_REQUEST, $user);
+    echo json_encode($result);
+    exit;
+}
 
 /**
  * Video Processing Endpoint (delegate to plugin)
