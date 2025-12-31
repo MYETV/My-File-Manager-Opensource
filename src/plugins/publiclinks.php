@@ -9,7 +9,7 @@ class PubliclinksPlugin {
     private $linksDir;
     
     // FILE PATH OF THE JSON FILE (MUST BE THE SAME OF THE DOWNLOAD.PHP FILE)
-    const PUBLIC_LINKS_DIR = '/files/public_links';
+    const PUBLIC_LINKS_DIR = '/media/contentdelivery.myetv.tv/MYCLOUD/public_links';
     
     public function __construct($config) {
         $this->config = $config;
@@ -72,98 +72,120 @@ HTACCESS;
         }
     }
     
-    /**
-     * Create new public link
-     */
-    private function createLink($params, $user) {
-        $fileHash = $params['file_hash'] ?? '';
-        $fileName = $params['file_name'] ?? '';
-        $fileSize = intval($params['file_size'] ?? 0);
-        $linkType = $params['link_type'] ?? 'public';
-        $expirationMinutes = intval($params['expiration_minutes'] ?? 30);
-        $waitSeconds = intval($params['wait_seconds'] ?? 30);
-        $maxDownloads = intval($params['max_downloads'] ?? 0);
-        
-        if (empty($fileHash) || empty($fileName)) {
-            throw new Exception('Invalid file data', 400);
-        }
-        
-        // Generate secure unique token (64 chars)
+/**
+ * Create new public link
+ */
+private function createLink($params, $user) {
+    $fileHash = $params['file_hash'] ?? '';
+    $fileName = $params['file_name'] ?? '';
+    $fileSize = intval($params['file_size'] ?? 0);
+    $linkType = $params['link_type'] ?? 'public';
+    $expirationMinutes = intval($params['expiration_minutes'] ?? 30);
+    $waitSeconds = intval($params['wait_seconds'] ?? 30);
+    $maxDownloads = intval($params['max_downloads'] ?? 0);
+    $cancelJsonFile = ($params['cancel_json_file'] ?? '1') === '1'; // Default: true
+
+    if (empty($fileHash) || empty($fileName)) {
+        throw new Exception('Invalid file data', 400);
+    }
+
+    // Generate secure unique token (64 chars) and check for duplicates
+    $maxAttempts = 10;
+    $attempt = 0;
+    do {
         $token = bin2hex(random_bytes(32));
-        $createdAt = time();
-        $expiresAt = $createdAt + ($expirationMinutes * 60);
-        
-        // Link data
-        $linkData = [
-            'token' => $token,
-            'user_id' => $user['id'],
-            'user_name' => $user['username'] ?? 'Unknown',
-            'file_hash' => $fileHash,
-            'file_name' => $fileName,
-            'file_size' => $fileSize,
-            'link_type' => $linkType,
-            'wait_seconds' => $waitSeconds,
-            'max_downloads' => $maxDownloads,
-            'download_count' => 0,
-            'created_at' => $createdAt,
-            'expires_at' => $expiresAt,
-            'last_download_at' => null,
-            'root_path' => $this->config['rootPath']
-        ];
-        
-        // Save link as JSON file
         $linkFile = $this->linksDir . '/' . $token . '.json';
-        file_put_contents($linkFile, json_encode($linkData, JSON_PRETTY_PRINT));
+        $attempt++;
         
-        error_log("✅ Created link: {$token} for file: {$fileName}");
-        
-        // Clean expired links
-        $this->cleanExpiredLinks();
-        
-        return [
-            'success' => true,
-            'token' => $token,
-            'download_url' => '/download.php?t=' . $token,
-            'expires_at' => $expiresAt
-        ];
-    }
+        if ($attempt >= $maxAttempts) {
+            error_log("⚠️ Failed to generate unique token after {$maxAttempts} attempts");
+            throw new Exception('Failed to generate unique token', 500);
+        }
+    } while (file_exists($linkFile));
+
+    error_log("✅ Generated unique token after {$attempt} attempt(s): {$token}");
+
+    $createdAt = time();
+    $expiresAt = $createdAt + ($expirationMinutes * 60);
+
+    // Link data
+    $linkData = [
+        'token' => $token,
+        'user_id' => $user['id'],
+        'user_name' => $user['username'] ?? 'Unknown',
+        'file_hash' => $fileHash,
+        'file_name' => $fileName,
+        'file_size' => $fileSize,
+        'link_type' => $linkType,
+        'wait_seconds' => $waitSeconds,
+        'max_downloads' => $maxDownloads,
+        'download_count' => 0,
+        'created_at' => $createdAt,
+        'expires_at' => $expiresAt,
+        'last_download_at' => null,
+        'root_path' => $this->config['rootPath'],
+        'cancel_json_file' => $cancelJsonFile // ← NUOVO
+    ];
+
+    // Save link as JSON file
+    file_put_contents($linkFile, json_encode($linkData, JSON_PRETTY_PRINT));
+    error_log("✅ Created link: {$token} for file: {$fileName} (cancel_json: " . ($cancelJsonFile ? 'yes' : 'no') . ")");
+
+    // Clean expired links
+    $this->cleanExpiredLinks();
+
+    return [
+        'success' => true,
+        'token' => $token,
+        'download_url' => '/download.php?t=' . $token,
+        'expires_at' => $expiresAt
+    ];
+}
     
-    /**
-     * List user's links
-     */
-    private function listLinks($user) {
-        $links = [];
-        
-        if (!is_dir($this->linksDir)) {
-            return ['success' => true, 'links' => []];
-        }
-        
-        $files = glob($this->linksDir . '/*.json');
-        
-        foreach ($files as $file) {
-            $linkData = json_decode(file_get_contents($file), true);
-            
-            // Skip links from other users
-            if ($linkData['user_id'] !== $user['id']) {
-                continue;
-            }
-            
-            // Skip expired links
-            if ($linkData['expires_at'] < time()) {
-                unlink($file); // Auto-cleanup
-                continue;
-            }
-            
-            $links[] = $linkData;
-        }
-        
-        // Sort by creation date (newest first)
-        usort($links, function($a, $b) {
-            return $b['created_at'] - $a['created_at'];
-        });
-        
-        return ['success' => true, 'links' => $links];
+/**
+ * List user's links
+ */
+private function listLinks($user) {
+    $links = [];
+    if (!is_dir($this->linksDir)) {
+        return ['success' => true, 'links' => []];
     }
+
+    $files = glob($this->linksDir . '/*.json');
+    $now = time();
+    
+    foreach ($files as $file) {
+        $linkData = json_decode(file_get_contents($file), true);
+        
+        // Skip links from other users
+        if ($linkData['user_id'] !== $user['id']) {
+            continue;
+        }
+
+        $isExpired = $linkData['expires_at'] < $now;
+        $cancelJsonFile = $linkData['cancel_json_file'] ?? true; // Default: true per retrocompatibilità
+        
+        // Se scaduto e deve essere cancellato, eliminalo
+        if ($isExpired && $cancelJsonFile) {
+            unlink($file);
+            continue;
+        }
+        
+        // Aggiungi flag "expired" per mostrarlo nell'UI
+        if ($isExpired) {
+            $linkData['is_expired'] = true;
+        }
+        
+        $links[] = $linkData;
+    }
+
+    // Sort by creation date (newest first)
+    usort($links, function($a, $b) {
+        return $b['created_at'] - $a['created_at'];
+    });
+
+    return ['success' => true, 'links' => $links];
+}
     
     /**
      * Delete a link
@@ -194,28 +216,35 @@ HTACCESS;
         return ['success' => true];
     }
     
-    /**
-     * Clean expired links
-     */
-    private function cleanExpiredLinks() {
-        if (!is_dir($this->linksDir)) {
-            return;
-        }
+/**
+ * Clean expired links
+ */
+private function cleanExpiredLinks() {
+    if (!is_dir($this->linksDir)) {
+        return;
+    }
+
+    $files = glob($this->linksDir . '/*.json');
+    $now = time();
+    $cleaned = 0;
+
+    foreach ($files as $file) {
+        $linkData = json_decode(file_get_contents($file), true);
         
-        $files = glob($this->linksDir . '/*.json');
-        $now = time();
-        $cleaned = 0;
-        
-        foreach ($files as $file) {
-            $linkData = json_decode(file_get_contents($file), true);
-            if ($linkData && $linkData['expires_at'] < $now) {
+        if ($linkData && $linkData['expires_at'] < $now) {
+            $cancelJsonFile = $linkData['cancel_json_file'] ?? true;
+            
+            // Cancella solo se l'opzione è true
+            if ($cancelJsonFile) {
                 unlink($file);
                 $cleaned++;
             }
         }
-        
-        if ($cleaned > 0) {
-            error_log("🧹 Cleaned {$cleaned} expired links");
-        }
     }
+
+    if ($cleaned > 0) {
+        error_log("🧹 Cleaned {$cleaned} expired links");
+    }
+}
+
 }
