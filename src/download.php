@@ -1,14 +1,27 @@
 <?php
 /**
  * Public Download Page - Standalone
- * No external dependencies
+ * Generic version with configurable authentication
  */
 
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
 // FILE PATH OF THE JSON FILE (MUST BE THE SAME OF THE PLUGIN)
-define('PUBLIC_LINKS_DIR', '/files/public_links');
+define('PUBLIC_LINKS_DIR', __DIR__ . '/files/public_links');
 
 // DATE/TIME TIMEZONE
 define('DISPLAY_TIMEZONE', 'UTC');
+
+// AUTHENTICATION CONFIGURATION
+// You can implement your own authentication by modifying the isUserAuthenticated() function below
+// or by including your own authentication system
+define('AUTH_ENABLED', false); // Set to true to enable custom authentication
+define('AUTH_LOGIN_URL', '/login.php'); // URL to redirect for login
+
+// Optional: Include your custom authentication system
+// Example: include_once __DIR__ . '/auth/your-auth-system.php';
 
 // ============================================================================
 // PREVENT BROWSER CACHING
@@ -101,12 +114,50 @@ function incrementDownload($token, $linkData) {
 }
 
 /**
- * Check if user is authenticated (for registered-only links)
+ * Check if user is authenticated
+ * 
+ * CUSTOMIZE THIS FUNCTION FOR YOUR AUTHENTICATION SYSTEM
+ * 
+ * Examples:
+ * - return !empty($_SESSION['user_id']);
+ * - return !empty($_SESSION['logged_in']);
+ * - return isset($_COOKIE['auth_token']) && validateToken($_COOKIE['auth_token']);
+ * - return checkCustomAuth();
  */
 function isUserAuthenticated() {
-    return isset($_SESSION['user_id']) || 
-           isset($_SESSION['logged_in']) || 
-           isset($_COOKIE['auth_token']);
+    if (!AUTH_ENABLED) {
+        return false; // Authentication disabled, registered links not available
+    }
+    
+    // Example implementations (uncomment and modify as needed):
+    
+    // Basic session check
+    return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+    
+    // Or check for logged_in flag
+    // return isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+    
+    // Or check cookie
+    // return isset($_COOKIE['auth_token']) && !empty($_COOKIE['auth_token']);
+    
+    // Or use custom function
+    // return yourCustomAuthCheck();
+}
+
+/**
+ * Get current authenticated user info (optional)
+ * Return array with 'username' or null if not authenticated
+ */
+function getCurrentUser() {
+    if (!isUserAuthenticated()) {
+        return null;
+    }
+    
+    // Customize based on your authentication system
+    return [
+        'username' => $_SESSION['username'] ?? $_SESSION['user_name'] ?? 'User',
+        'id' => $_SESSION['user_id'] ?? null
+    ];
 }
 
 // ============================================================================
@@ -139,8 +190,20 @@ if ($link['max_downloads'] > 0 && $link['download_count'] >= $link['max_download
 
 // Check if registered users only
 if ($link['link_type'] === 'registered') {
+    if (!AUTH_ENABLED) {
+        http_response_code(403);
+        die('🔒 This link requires authentication, but authentication is not enabled on this server.');
+    }
+    
     if (!isUserAuthenticated()) {
-        die('🔒 This link requires login. Please <a href="/login.php">login</a> first.');
+        http_response_code(403);
+        $loginUrl = AUTH_LOGIN_URL;
+        die('🔒 This link requires login. Please <a href="' . htmlspecialchars($loginUrl) . '" style="color: #667eea; text-decoration: underline;">login</a> first to access this file.');
+    }
+    
+    $currentUser = getCurrentUser();
+    if ($currentUser) {
+        error_log("✅ Registered link accessed by user: {$currentUser['username']}");
     }
 }
 
@@ -149,6 +212,14 @@ if ($link['link_type'] === 'registered') {
 // ============================================================================
 
 if ($action === 'download') {
+    // Re-check authentication for registered links on actual download
+    if ($link['link_type'] === 'registered') {
+        if (!AUTH_ENABLED || !isUserAuthenticated()) {
+            http_response_code(403);
+            die('🔒 Authentication required for download');
+        }
+    }
+    
     // Verify wait time has passed
     $waitKey = 'wait_' . $token;
     if (!isset($_SESSION[$waitKey]) || (time() - $_SESSION[$waitKey]) < $link['wait_seconds']) {
@@ -167,6 +238,11 @@ if ($action === 'download') {
         error_log("❌ File not found: {$fullPath}");
         die('❌ File not found on server');
     }
+    
+    // Log download with user info if authenticated
+    $currentUser = getCurrentUser();
+    $userInfo = $currentUser ? " by user: {$currentUser['username']}" : " (anonymous)";
+    error_log("📥 Download starting: {$link['file_name']}{$userInfo}");
     
     // Increment download counter
     incrementDownload($token, $link);
@@ -204,7 +280,7 @@ if ($action === 'download') {
     }
     fclose($fp);
     
-    error_log("✅ Download completed for: {$link['file_name']}");
+    error_log("✅ Download completed for: {$link['file_name']}{$userInfo}");
     exit;
 }
 
@@ -227,6 +303,10 @@ $expiresDate = new DateTime('@' . $link['expires_at']);
 $expiresDate->setTimezone(new DateTimeZone($timezone));
 $expiresFormatted = $expiresDate->format('Y-m-d H:i');
 
+// Check link type for display
+$isRegisteredOnly = ($link['link_type'] === 'registered');
+$currentUser = getCurrentUser();
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -241,15 +321,13 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        /* Fixed: removed flex from body to allow AdSense privacy banner to position correctly */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #daa520 0%, #b8860b 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
         
-        /* Wrapper to center content without interfering with AdSense */
         .dl-page-wrapper {
             display: flex;
             align-items: center;
@@ -272,12 +350,23 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
             font-size: 28px; 
         }
         
+        .dl-user-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
         .dl-file-info {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 10px;
             margin: 25px 0;
-            border-left: 4px solid #daa520;
+            border-left: 4px solid #667eea;
         }
         
         .dl-file-info div { 
@@ -289,9 +378,28 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
             color: #333; 
         }
         
+        .dl-link-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .dl-link-type-public {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .dl-link-type-registered {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
         .dl-countdown {
             font-size: 72px;
-            color: #daa520;
+            color: #667eea;
             text-align: center;
             margin: 40px 0;
             font-weight: bold;
@@ -309,7 +417,7 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
             display: block;
             width: 100%;
             padding: 18px;
-            background: linear-gradient(135deg, #daa520 0%, #b8860b 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             text-align: center;
             text-decoration: none;
@@ -318,15 +426,15 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
             font-weight: bold;
             margin-top: 20px;
             transition: transform 0.2s;
-            box-shadow: 0 4px 15px rgba(218, 165, 32, 0.4);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
             border: none;
             cursor: pointer;
         }
         
         .dl-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(218, 165, 32, 0.6);
-            background: linear-gradient(135deg, #b8860b 0%, #daa520 100%);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
         }
         
         .dl-progress-wrapper {
@@ -340,7 +448,7 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
         
         .dl-progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #daa520 0%, #b8860b 100%);
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
             width: 0%;
             transition: width 1s linear;
         }
@@ -356,6 +464,20 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
             color: #999;
             font-style: italic;
         }
+        
+        @media (max-width: 768px) {
+            .dl-wrapper {
+                padding: 30px 20px;
+            }
+            
+            .dl-title {
+                font-size: 24px;
+            }
+            
+            .dl-countdown {
+                font-size: 56px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -363,8 +485,24 @@ $expiresFormatted = $expiresDate->format('Y-m-d H:i');
         <div class="dl-wrapper">
             <h1 class="dl-title">📥 Download File</h1>
             
+            <?php if ($currentUser): ?>
+                <div class="dl-user-badge">
+                    👤 Logged in as: <?= htmlspecialchars($currentUser['username']) ?>
+                </div>
+            <?php endif; ?>
+            
             <div class="dl-file-info">
-                <div><strong>📄 File:</strong> <?= htmlspecialchars($link['file_name']) ?></div>
+                <div>
+                    <strong>📄 File:</strong> <?= htmlspecialchars($link['file_name']) ?>
+                </div>
+                <div>
+                    <strong>🔒 Access Type:</strong>
+                    <?php if ($isRegisteredOnly): ?>
+                        <span class="dl-link-type-badge dl-link-type-registered">🔐 Registered Users Only</span>
+                    <?php else: ?>
+                        <span class="dl-link-type-badge dl-link-type-public">🌐 Public Link</span>
+                    <?php endif; ?>
+                </div>
                 <div><strong>💾 Size:</strong> <?= $fileSizeMB ?> MB</div>
                 <div><strong>📊 Downloads:</strong> <?= $link['download_count'] ?><?= $link['max_downloads'] > 0 ? ' / ' . $link['max_downloads'] : '' ?></div>
                 <div><strong>⏰ Expires in:</strong> <?= $expiresMinutes ?> minutes</div>
