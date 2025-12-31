@@ -233,7 +233,7 @@ $config = [
 
 ## Plugin System
 
-### Video Editor Plugin
+### Video Editor Plugin (video_editor.php)
 
 Enables FFmpeg-based video processing:
 
@@ -254,7 +254,7 @@ $config = [
 ];
 ```
 
-### FTP Plugin
+### FTP Plugin (ftpplugin.php)
 
 Connect to remote FTP servers:
 
@@ -269,6 +269,20 @@ $config = [
             'port' => 21,
             'passive' => true
         ],
+    ],
+];
+```
+
+### Public Links Downloader Plugin (publiclinks.php)
+
+Enables and config the public links downloader plugins:
+
+```php
+$config = [
+    'plugins' => [
+       'publiclinks' => [
+    'enabled' => true, // ENABLED/DISABLED download public links plugin
+],
     ],
 ];
 ```
