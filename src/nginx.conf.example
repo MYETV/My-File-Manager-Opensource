@@ -1,7 +1,7 @@
-# Configurazione Nginx per /src/
+# Config Nginx for /src/
 location /src/ {
-    # Allow ONLY connector.php
-    location ~ ^/src/connector\.php$ {
+    # Allow ONLY connector.php and download.php
+    location ~ ^/src/(connector|download)\.php$ {
         # FastCGI configuration (adjust paths as needed)
         fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
         fastcgi_index index.php;
@@ -19,8 +19,13 @@ location /src/ {
         return 403;
     }
     
+    # Block public_links directory (important!)
+    location ~ ^/src/public_links/ {
+        return 403;
+    }
+    
     # Block sensitive files
-    location ~ \.(ini|log|conf|bak|tmp)$ {
+    location ~ \.(ini|log|conf|bak|tmp|json)$ {
         return 403;
     }
     
