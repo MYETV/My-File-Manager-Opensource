@@ -1,0 +1,20 @@
+# Deny access to all PHP files
+<Files "*.php">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+# Allow only connector.php
+<Files "connector.php">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+# Allow only download.php
+<Files "download.php">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+# Disable directory listing
+Options -Indexes
