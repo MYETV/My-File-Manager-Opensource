@@ -232,7 +232,7 @@ try {
     return [
         'id' => 'user123',
         'username' => 'the_user_name',
-        'quota' => '524288000', // in bytes
+        'quota' => parseFileSize("5GB"), // Examples: 5368709120, "5GB", "5000MB". Default (without unit) is bytes
         'permissions' => ['read', 'write', 'delete', 'upload', 'download', 'rename', 'copy', 'move', 'mkdir', 'search', 'quota', 'info']
     ];
 }
@@ -432,6 +432,24 @@ if ($cmd === 'upload') {
             error_log("Upload ALLOWED in folder: $relativePathCheck");
         }
     }
+
+    // Calculate current space usage
+$fm = new MyFileManager($config, $user);
+$quota = $fm->getQuota();
+
+if ($quota && $quota['total'] > 0) {
+    $fileSize = $uploadFile['size'] ?? 0;
+    
+    // Check if file fits in available space
+    if ($quota['free'] < $fileSize) {
+        http_response_code(507);
+        echo json_encode([
+            'error' => 'Quota exceeded. Available: ' . $quota['free'] . ' bytes, Required: ' . $fileSize . ' bytes',
+            'code' => 507
+        ]);
+        exit;
+    }
+}
 
     //  Use ChunkUploader for ALL files (removes < 5MB special case)
     $uploader = new ChunkUploader([
