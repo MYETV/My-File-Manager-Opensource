@@ -823,7 +823,7 @@ private function isUploadBlockedFolder($path) {
      * 
      * @return array Quota info
      */
-    private function getQuota() {
+    public function getQuota() {
     // User-specific quota
     $userQuota = isset($this->user['quota']) ? (int)$this->user['quota'] : 0;
     
