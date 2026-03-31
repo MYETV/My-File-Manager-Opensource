@@ -207,6 +207,10 @@ try {
         ],
 
         'plugins' => [
+        'clamav' => [
+            'enabled' => false,
+            'clamdscan_path' => '/usr/bin/clamdscan',
+            ], //clamav antivirus scans
         'rate_limiter' => ['enabled' => false], // this enable rate limiter for video editor
          'video_editor' => [
         'enabled' => false,
@@ -451,7 +455,7 @@ if ($quota && $quota['total'] > 0) {
     }
 }
 
-    //  Use ChunkUploader for ALL files (removes < 5MB special case)
+    // Use ChunkUploader for ALL files (removes < 5MB special case)
     $uploader = new ChunkUploader([
         'maxFileSize' => $config['maxFileSize'],
         'allowedMimeTypes' => $config['allowedMimeTypes'],
@@ -459,6 +463,34 @@ if ($quota && $quota['total'] > 0) {
     ]);
 
     $result = $uploader->handleUpload($uploadFile, $targetPath, $_POST);
+    
+    // --- START CLAMAV PLUGIN INTEGRATION ---
+    // Check if the file has been fully assembled and saved
+    if (isset($result['completed']) && $result['completed'] === true && isset($result['path'])) {
+        
+        // Check if ClamAV plugin is present and enabled in the config
+        if (isset($config['plugins']['clamav'])) {
+            $clamavScanner = $config['plugins']['clamav'];
+            $scanResult = $clamavScanner->scanFile($result['path']);
+            
+            // If the antivirus fails or finds a virus
+            if (!$scanResult['success'] || !$scanResult['is_safe']) {
+                // DESTROY the newly uploaded infected file from the disk
+                @unlink($result['path']);
+                error_log("ClamAV Security Alert: Malware detected in " . $result['path'] . " - File destroyed.");
+                
+                // Stop the process and send the error back to the browser UI
+                http_response_code(406); // Not Acceptable
+                echo json_encode([
+                    'error' => 'Security Alert: Potential Malware detected. The upload has been blocked and the file destroyed.',
+                    'code' => 406
+                ]);
+                exit;
+            }
+        }
+    }
+    // --- END CLAMAV PLUGIN INTEGRATION ---
+
     echo json_encode($result);
     exit;
 }
