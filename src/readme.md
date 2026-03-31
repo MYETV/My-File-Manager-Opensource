@@ -253,7 +253,7 @@ $config = [
 
 ## Plugin System
 
-To enable or disable a plugin or configure its options in the php environment you must edit your connector.php file with the needed plugin.
+To enable or disable a plugin or configure its options in the php environment you must edit your connector.php file with the needed plugin. The plugin file (.php) must be in the folder /plugins/ that folder should be in the same folder of connector.php
 
 ### Video Editor Plugin (video_editor.php)
 
@@ -292,6 +292,19 @@ $config = [
             'passive' => true
         ],
     ],
+];
+```
+
+### ClamAV Plugin (clamav.php)
+
+Scan uploaded file with ClamAV antivirus for malware or viruses:
+
+```php
+$config = [
+    'clamav' => [
+    'enabled' => true, //enable or disable the plugin
+    'clamdscan_path' => '/usr/bin/clamdscan', //setup the folder where the clamav antivirus is installed (for linux this should be the default)
+    ], //clamav antivirus scans
 ];
 ```
 
